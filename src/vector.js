@@ -1,87 +1,190 @@
+goog.require("engine3D.Matrix");
+goog.provide("engine3D.Vector");
+
 goog.provide("engine3D.Vector2");
 goog.provide("engine3D.Vector3");
 goog.provide("engine3D.Vector4");
 
-class Vector2 {
+/**
+Classes that represent 2D, 3D, and 4D vectors.
+Note that all operations that return a vector are also self-modifying.
+*/
+
+class Vector {
     
-    constructor(x, y) {
-        this.x = x || 0;
-        this.y = y || 0;
+    constructor(size) {
+        this.size = size;
+        this.v = [];
+        setZero();
     }
     
-    /** Sets this vector's components to another one's. */
-    set(v) {
-        this.x = v.x;
-        this.y = v.y;
-    }
-    
-    /** Adds another vector to this one. */
-    add(v) {
-        this.x += v.x;
-        this.y += v.y;
+    /** Sets this vector to the zero vector. */
+    setZero() {
+        for (var i = 0; i < this.size; i++)
+            this.v[i] = 0;
         return this;
     }
     
-    /** Subtracts another vector from this one. */
-    sub(v) {
-        this.x -= v.x;
-        this.y -= v.y;
+    /** Sets the components of this vector to another's. */
+    set(vec) {
+        for (var i = 0; i < this.size; i++)
+            this.v[i] = vec[i];
         return this;
     }
     
-    /** Negates this vector (same as scale(-1)). */
+    /** Make a copy. */
+    copy() {
+        var v = new Vector(this.size);
+        for (var i = 0; i < this.size; i++)
+            v.v[i] = this.v[i];
+        return v;
+    }
+    
+    toString() {
+        var s = "(" + this.v[0];
+        for (var i = 1; i < this.size; i++)
+            s += "," + this.v[i];
+        return s;
+    }
+    
+    /** Vector addition. */
+    add(vec) {
+        if (this.size != vec.size) return null;
+        
+        for (var i = 0; i < this.size; i++)
+            this.v[i] += vec[i];
+        return this;
+    }
+    
+    /** Vector subtraction. */
+    sub(vec) {
+        if (this.size != vec.size) return null;
+        
+        for (var i = 0; i < this.size; i++)
+            this.v[i] -= vec[i];
+        return this;
+    }
+    
+    /** Scalar multiplication. */
+    scl(c) {
+        for (var i = 0; i < this.size; i++)
+            this.v[i] *= c;
+        return this;
+    }
+    
+    /** Negation (scl(-1)). */
     neg() {
-        return scale(-1);
+        return scl(-1);
     }
     
-    /** Scales this vector by a constant. */
-    scale(c) {
-        this.x *= c;
-        this.y *= c;
+    /** Dot product. */
+    dot(vec) {
+        if (this.size != vec.size) return NaN;
+        
+        var d = 0;
+        for (var i = 0; i < this.size; i++)
+            d += this.v[i] * vec.v[i];
         return this;
     }
     
-    /** Dot product with another vector. */
-    dot(v) {
-        return this.x*v.x + this.y*v.y;
+    /** Angle to another vector. */
+    angle(vec) {
+        return Math.acos(this.dot(vec) / this.mag() / vec.mag());
     }
     
-    /** Distance squared to another vector. */
-    distSqr(v) {
-        return (v.x-this.x)*(v.x-this.x) + (v.y-this.y)*(v.y-this.y);
+    /** Component of this vector onto another. */
+    comp(vec) {
+        return this.dot(v) / vec.mag();
     }
     
-    /** Distance to another vector. */
-    dist(v) {
-        return Math.sqrt(this.distSqr(v));
+    /** Vector projection onto another. */
+    proj(vec) {
+        return this.scl(this.dot(vec) / vec.magSqr());
     }
     
-    /** The magnitude squared of this vector. */
+    /** Distance squared. */
+    distSqr(vec) {
+        if (this.size != vec.size) return NaN;
+        
+        var d = 0;
+        for (var i = 0; i < this.size; i++)
+            d += (vec.v[i]-this.v[i]) * (vec.v[i]-this.v[i])
+        return d;
+    }
+    
+    /** Distance. */
+    dist(vec) {
+        return Math.sqrt(this.distSqr(vec));
+    }
+    
+    /** Magnitude squared. */
     magSqr() {
         return this.dot(x);
     }
     
-    /** The magnitude of this vector. */
+    /** Magnitude. */
     mag() {
         return Math.sqrt(this.magSqr());
     }
     
-    /** Normalizes this vector to length 1. */
+    /** Normalization. */
     normalize() {
-        this.scale(this.mag());
+        this.scl(this.mag());
         return this;
     }
     
-    /** Linearly interpolates between between this vector and another. 0 < t < 1. */
-    lerp(v, t) {
-        this.x += (v.x - this.x) * t;
-        this.y += (v.y - this.y) * t;
+    /** Linear interpolation. 0 < t < 1. */
+    lerp(vec, t) {
+        if (this.size != vec.size) return null;
+        
+        for (var i = 0; i < this.size; i++)
+            this.v[i] += (vec.v[i] - this.v[i]) * t;
         return this;
     }
     
-    /** Creates a copy of this vector with the same components. */
-    copy() {
-        return new Vector2(this.x, this.y);
+    /** Matrix (linear) transformation. */
+    applyTransform(mat) {
+        if (this.size != mat.cols) return null;
+        
+        var vec = this.copy();
+        for (var i = 0; i < mat.rows; i++) for (var j = 0; j < this.size; j++)
+            this.v[i] += mat.m[i][j] * this.v[j];
+        
+        this.size = mat.rows;
+        return this;
+    }
+}
+
+class Vector2 {
+    
+    constructor(x, y) {
+        super(2);
+        this.v[0] = x || 0;
+        this.v[1] = y || 0;
+    }
+    
+    get x() {
+        return this.v[0];
+    }
+    
+    get y() {
+        return this.v[1];
+    }
+    
+    set x(newX) {
+        this.v[0] = newX;
+    }
+    
+    set y(newY) {
+        this.v[1] = newY;
+    }
+
+    /** Applies a 2x2 matrix transformation to this vector. */
+    applyTransform(mat) {
+        var x0 = this.x; var y0 = this.y;
+        this.x = mat.m[0] * x0 + mat.m[1] * y0;
+        this.y = mat.m[2] * x0 + mat.m[3] * y0;
+        return this;
     }
     
     /** Creates a 3d vector with z=0. */
@@ -93,59 +196,39 @@ class Vector2 {
     toVector4() {
         return new Vector4(this.x, this.y);
     }
-    
-    toString() {
-        return "(" + this.x + "," + this.y + ")";
-    }
 }
 
-class Vector3 {
+class Vector3 extends Vector {
     
     constructor(x, y, z) {
-        this.x = x || 0;
-        this.y = y || 0;
-        this.z = z || 0;
+        super(3);
+        this.v[0] = x || 0;
+        this.v[1] = y || 0;
+        this.v[2] = z || 0;
     }
     
-    /** Sets this vector's components to another one's. */
-    set(v) {
-        this.x = v.x;
-        this.y = v.y;
-        this.z = v.z;
+    get x() {
+        return this.v[0];
     }
     
-    /** Adds another vector to this one. */
-    add(v) {
-        this.x += v.x;
-        this.y += v.y;
-        this.z += v.z;
-        return this;
+    get y() {
+        return this.v[1];
     }
     
-    /** Subtracts another vector from this one. */
-    sub(v) {
-        this.x -= v.x;
-        this.y -= v.y;
-        this.z -= v.z;
-        return this;
+    get z() {
+        return this.v[2];
     }
     
-    /** Negates this vector (same as scale(-1)). */
-    neg() {
-        return scale(-1);
+    set x(newX) {
+        this.v[0] = newX;
     }
     
-    /** Scales this vector by a constant. */
-    scale(c) {
-        this.x *= c;
-        this.y *= c;
-        this.z *= c;
-        return this;
+    set y(newY) {
+        this.v[1] = newY;
     }
     
-    /** Dot product with another vector. */
-    dot(v) {
-        return this.x*v.x + this.y*v.y + this.z*v.z;
+    set z(newZ) {
+        this.v[2] = newZ;
     }
     
     /** Cross product with another vector. */
@@ -157,147 +240,57 @@ class Vector3 {
         return this;
     }
     
-    /** Distance squared to another vector. */
-    distSqr(v) {
-        return (v.x-this.x)*(v.x-this.x) + (v.y-this.y)*(v.y-this.y) + (v.z-this.z)*(v.z-this.z);
-    }
-    
-    /** Distance to another vector. */
-    dist(v) {
-        return Math.sqrt(this.distSqr(v));
-    }
-    
-    /** The magnitude squared of this vector. */
-    magSqr() {
-        return this.x*this.x + this.y*this.y + this.z*this.z;
-    }
-    
-    /** The magnitude of this vector. */
-    mag() {
-        return Math.sqrt(this.magSqr());
-    }
-    
-    /** Normalizes this vector to length 1. */
-    normalize() {
-        this.scale(this.mag());
-        return this;
-    }
-    
-    /** Linearly interpolates between between this vector and another. 0 < t < 1. */
-    lerp(v, t) {
-        this.x += (v.x - this.x) * t;
-        this.y += (v.y - this.y) * t;
-        this.z += (v.z - this.z) * t;
-        return this;
-    }
-    
     /** Creates a 2d vector with the same x and y components. */
     toVector2() {
         return new Vector2(this.x, this.y);
-    }
-    
-    /** Creates a copy of this vector with the same components. */
-    copy() {
-        return new Vector3(this.x, this.y, this.z);
     }
     
     /** Creates a 4d vector with w=1. */
     toVector4() {
         return new Vector4(this.x, this.y, this.z);
     }
-    
-    toString() {
-        return "(" + this.x + "," + this.y + "," + this.z + ")";
-    }
 }
 
-class Vector4 {
+class Vector4 extends Vector {
     
     constructor(x, y, z, w) {
-        this.x = x || 0;
-        this.y = y || 0;
-        this.z = z || 0;
-        this.w = w || 1;
+        super(4);
+        this.v[0] = x || 0;
+        this.v[1] = y || 0;
+        this.v[2] = z || 0;
+        this.v[3] = w || 1;
     }
     
-    /** Sets this vector's components to another one's. */
-    set(v) {
-        this.x = v.x;
-        this.y = v.y;
-        this.z = v.z;
-        this.w = v.w;
+    get x() {
+        return this.v[0];
     }
     
-    /** Adds another vector to this one. */
-    add(v) {
-        this.x += v.x;
-        this.y += v.y;
-        this.z += v.z;
-        this.w += v.w;
-        return this;
+    get y() {
+        return this.v[1];
     }
     
-    /** Subtracts another vector from this one. */
-    sub(v) {
-        this.x -= v.x;
-        this.y -= v.y;
-        this.z -= v.z;
-        this.w -= v.w;
-        return this;
+    get z() {
+        return this.v[2];
     }
     
-    /** Negates this vector (same as scale(-1)). */
-    neg() {
-        return scale(-1);
+    get w() {
+        return this.v[3];
     }
     
-    /** Scales this vector by a constant. */
-    scale(c) {
-        this.x *= c;
-        this.y *= c;
-        this.z *= c;
-        this.w *= c;
-        return this;
+    set x(newX) {
+        this.v[0] = newX;
     }
     
-    /** Dot product with another vector. */
-    dot(v) {
-        return this.x*v.x + this.y*v.y + this.z*v.z + this.w*v.w;
+    set y(newY) {
+        this.v[1] = newY;
     }
     
-    /** Distance squared to another vector. */
-    distSqr(v) {
-        return (v.x-this.x)*(v.x-this.x) + (v.y-this.y)*(v.y-this.y) + (v.z-this.z)*(v.z-this.z);
+    set z(newZ) {
+        this.v[2] = newZ;
     }
     
-    /** Distance to another vector. */
-    dist(v) {
-        return Math.sqrt(this.distSqr(v));
-    }
-    
-    /** The magnitude squared of this vector. */
-    magSqr() {
-        return this.x*this.x + this.y*this.y + this.z*this.z;
-    }
-    
-    /** The magnitude of this vector. */
-    mag() {
-        return Math.sqrt(this.magSqr());
-    }
-    
-    /** Normalizes this vector to length 1. */
-    normalize() {
-        this.scale(this.mag());
-        return this;
-    }
-    
-    /** Linearly interpolates between between this vector and another. 0 < t < 1. */
-    lerp(v, t) {
-        this.x += (v.x - this.x) * t;
-        this.y += (v.y - this.y) * t;
-        this.z += (v.z - this.z) * t;
-        this.w += (v.w - this.w) * t;
-        return this;
+    set w(newW) {
+        this.v[3] = newW;
     }
     
     /** Creates a 2d vector with the same x and y components. */
@@ -308,14 +301,5 @@ class Vector4 {
     /** Creates a 3d vector with the same x, y, and z components. */
     toVector3() {
         return new Vector3(this.x, this.y, this.z);
-    }
-    
-    /** Creates a copy of this vector with the same components. */
-    copy() {
-        return new Vector4(this.x, this.y, this.z, this.w);
-    }
-    
-    toString() {
-        return "(" + this.x + "," + this.y + "," + this.z + "," + this.w + ")";
     }
 }
