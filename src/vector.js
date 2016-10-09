@@ -14,8 +14,8 @@ class Vector {
     
     constructor(size) {
         this.size = size;
-        this.v = [];
-        setZero();
+        this.v = new Array(size);
+        this.setZero();
     }
     
     /** Sets this vector to the zero vector. */

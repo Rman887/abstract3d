@@ -45,8 +45,8 @@ class Matrix {
     transpose() {
         for (var i = 0; i < this.rows / 2; i++) for (var j = 0; j < this.cols/2; j++) {
             var t = this.m[i][j];
-            this.m[i][j] = this.m[this.rows - i][this.cols - j];
-            this.m[this.rows - i][this.cols - j] = t;
+            this.m[i][j] = this.m[j][i];
+            this.m[j][i] = t;
         }
         return this;
     }
@@ -171,6 +171,15 @@ class Matrix2 extends Matrix {
         this.m = [[xScale, 0], [0, yScale]];
         return this;
     }
+    
+    toArray() {
+        var a = new Float32Array(4);
+        a[0] = this.m[0][0];
+        a[1] = this.m[0][1];
+        a[2] = this.m[1][0];
+        a[3] = this.m[1][1];
+        return a;
+    }
 }
 
 class Matrix3 extends Matrix {
@@ -178,11 +187,46 @@ class Matrix3 extends Matrix {
     constructor() {
         super(3, 3);
     }
+    
+    toArray() {
+        var a = new Float32Array(4);
+        a[0] = this.m[0][0];
+        a[1] = this.m[0][1];
+        a[2] = this.m[0][2];
+        a[3] = this.m[1][0];
+        a[4] = this.m[1][1];
+        a[5] = this.m[1][2];
+        a[6] = this.m[2][0];
+        a[7] = this.m[2][1];
+        a[8] = this.m[2][2];
+        return a;
+    }
 }
 
 class Matrix4 extends Matrix {
     
     constructor() {
         super(4, 4);
+    }
+    
+    toArray() {
+        var a = new Float32Array(4);
+        a[0] = this.m[0][0];
+        a[1] = this.m[0][1];
+        a[2] = this.m[0][2];
+        a[3] = this.m[0][3];
+        a[4] = this.m[1][0];
+        a[5] = this.m[1][1];
+        a[6] = this.m[1][2];
+        a[7] = this.m[1][3];
+        a[8] = this.m[2][0];
+        a[9] = this.m[2][1];
+        a[10] = this.m[2][2];
+        a[11] = this.m[2][3];
+        a[12] = this.m[3][0];
+        a[13] = this.m[3][1];
+        a[14] = this.m[3][2];
+        a[15] = this.m[3][3];
+        return a;
     }
 }
